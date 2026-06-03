@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agenda Cirúrgica — Dr. Vinicius Bravo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F3EE;
+  --surface: #FFFFFF;
+  --surface2: #F0EDE6;
+  --border: #DDD9D0;
+  --border2: #C8C4BB;
+  --text: #1A1916;
+  --text2: #6B6860;
+  --text3: #9E9B95;
+  --accent: #1A3A2A;
+  --accent-light: #E8F0EB;
+  --accent-mid: #2E6B47;
+  --danger: #8B2020;
+  --danger-light: #F7EDED;
+  --mono: 'DM Mono', monospace;
+  --sans: 'DM Sans', sans-serif;
+  --r: 10px;
+  --r-sm: 6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 0 0 60px;
+}
+
+header {
+  background: var(--accent);
+  color: #fff;
+  padding: 20px 20px 18px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid #0d2218;
+}
+
+.header-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.header-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.header-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  font-family: var(--mono);
+  margin-top: 2px;
+}
+
+.week-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.week-pill label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.6);
+  font-family: var(--mono);
+  white-space: nowrap;
+}
+
+.week-pill input[type="date"] {
+  background: none;
+  border: none;
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+  width: 110px;
+  -webkit-appearance: none;
+}
+
+.week-pill input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.6);
+  cursor: pointer;
+}
+
+main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px 16px 0;
+}
+
+/* Day blocks */
+.day-block {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: box-shadow 0.15s;
+}
+
+.day-block.has-surgeries {
+  border-color: var(--border2);
+}
+
+.day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  cursor: pointer;
+  user-select: none;
+  background: var(--surface);
+  transition: background 0.1s;
+}
+
+.day-header:hover { background: var(--surface2); }
+
+.day-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.day-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border2);
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.has-surgeries .day-dot { background: var(--accent-mid); }
+
+.day-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.day-badge {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text3);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+
+.has-surgeries .day-badge {
+  color: var(--accent-mid);
+  background: var(--accent-light);
+  border-color: #b8d4c2;
+}
+
+.day-chevron {
+  font-size: 14px;
+  color: var(--text3);
+  transition: transform 0.2s;
+  line-height: 1;
+}
+
+.day-body {
+  display: none;
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.day-body.open { display: block; }
+
+/* Surgery cards */
+.surgery-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 12px;
+  margin-top: 10px;
+  position: relative;
+}
+
+.surgery-num {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--text3);
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.fields-grid.full { grid-template-columns: 1fr; }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field label {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.field input {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 7px 10px;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.field input:focus {
+  border-color: var(--accent-mid);
+  box-shadow: 0 0 0 3px rgba(46,107,71,0.08);
+}
+
+.field input::placeholder { color: var(--text3); }
+
+.btn-remove {
+  margin-top: 10px;
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--danger);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  padding: 4px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.btn-remove:hover {
+  background: var(--danger-light);
+  border-color: #e0b0b0;
+}
+
+.btn-add {
+  margin-top: 10px;
+  width: 100%;
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--text2);
+  background: none;
+  border: 1px dashed var(--border2);
+  border-radius: var(--r-sm);
+  padding: 9px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+
+.btn-add:hover {
+  background: var(--accent-light);
+  color: var(--accent-mid);
+  border-color: #b8d4c2;
+  border-style: solid;
+}
+
+/* Preview section */
+.preview-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  background: var(--accent);
+  border-bottom: 1px solid #0d2218;
+}
+
+.preview-title {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: rgba(255,255,255,0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-copy, .btn-clear {
+  font-size: 11px;
+  font-family: var(--mono);
+  border-radius: var(--r-sm);
+  padding: 5px 12px;
+  cursor: pointer;
+  border: 1px solid;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-copy {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border-color: rgba(255,255,255,0.25);
+}
+
+.btn-copy:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+.btn-copy.copied {
+  background: #2E6B47;
+  border-color: #2E6B47;
+}
+
+.btn-clear {
+  background: none;
+  color: rgba(255,255,255,0.5);
+  border-color: rgba(255,255,255,0.15);
+}
+
+.btn-clear:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,0.3);
+}
+
+.preview-body {
+  padding: 16px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--text2);
+  white-space: pre-wrap;
+  min-height: 100px;
+  background: #FAFAF7;
+  border-bottom: 1px solid var(--border);
+}
+
+.preview-empty {
+  color: var(--text3);
+  font-style: italic;
+}
+
+.preview-footer {
+  padding: 8px 14px;
+  font-size: 11px;
+  color: var(--text3);
+  font-family: var(--mono);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.char-count {
+  margin-left: auto;
+  font-size: 10px;
+}
+
+/* Copied toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 10px 20px;
+  border-radius: 30px;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s;
+  z-index: 999;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <div class="header-title">Agenda Cirúrgica</div>
+      <div class="header-sub">Dr. Vinicius Bravo · Gerador para WhatsApp</div>
+    </div>
+    <div class="week-pill">
+      <label>Semana de</label>
+      <input type="date" id="weekStart">
+    </div>
+  </div>
+</header>
+
+<main id="main"></main>
+
+<div class="toast" id="toast">✓ Copiado para a área de transferência</div>
+
+<script>
+const DAYS = ['Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+let data = {};
+DAYS.forEach(d => data[d] = []);
+
+function uid() { return Math.random().toString(36).slice(2,9); }
+
+function render() {
+  const main = document.getElementById('main');
+  const openDays = {};
+  main.querySelectorAll('.day-body.open').forEach(el => { openDays[el.dataset.day] = true; });
+
+  main.innerHTML = '';
+
+  DAYS.forEach(day => {
+    const list = data[day];
+    const hasSurg = list.length > 0;
+    const isOpen = openDays[day] || false;
+
+    const block = document.createElement('div');
+    block.className = 'day-block' + (hasSurg ? ' has-surgeries' : '');
+
+    const hdr = document.createElement('div');
+    hdr.className = 'day-header';
+    hdr.innerHTML = `
+      <div class="day-header-left">
+        <div class="day-dot"></div>
+        <div class="day-name">${day}</div>
+        <div class="day-badge">${list.length === 0 ? 'livre' : list.length + ' cirurgia' + (list.length > 1 ? 's' : '')}</div>
+      </div>
+      <div class="day-chevron" style="transform:rotate(${isOpen?'90':'0'}deg)">›</div>`;
+    hdr.onclick = () => {
+      const body = block.querySelector('.day-body');
+      const chev = hdr.querySelector('.day-chevron');
+      const open = body.classList.toggle('open');
+      chev.style.transform = open ? 'rotate(90deg)' : 'rotate(0deg)';
+    };
+    block.appendChild(hdr);
+
+    const body = document.createElement('div');
+    body.className = 'day-body' + (isOpen ? ' open' : '');
+    body.dataset.day = day;
+
+    list.forEach((s, i) => {
+      const card = document.createElement('div');
+      card.className = 'surgery-card';
+      card.innerHTML = `
+        <div class="surgery-num">Cirurgia ${i + 1}</div>
+        <div class="fields-grid">
+          <div class="field"><label>Horário</label><input data-f="hora" value="${s.hora}" placeholder="07:00"></div>
+          <div class="field"><label>Paciente</label><input data-f="paciente" value="${s.paciente}" placeholder="Nome completo"></div>
+        </div>
+        <div class="fields-grid" style="margin-top:8px">
+          <div class="field"><label>Procedimento</label><input data-f="procedimento" value="${s.procedimento}" placeholder="Ex: Sleeve gástrico"></div>
+          <div class="field"><label>Hospital / Sala</label><input data-f="local" value="${s.local}" placeholder="Ex: Santa Casa – S2"></div>
+        </div>
+        <div class="fields-grid full" style="margin-top:8px">
+          <div class="field"><label>Equipe escalada</label><input data-f="equipe" value="${s.equipe}" placeholder="Ex: Anest. João, Téc. Maria"></div>
+        </div>
+        <button class="btn-remove" data-id="${s.id}" data-day="${day}">✕ Remover cirurgia</button>`;
+
+      card.querySelectorAll('input').forEach(inp => {
+        inp.addEventListener('input', () => {
+          s[inp.dataset.f] = inp.value;
+          updatePreview();
+        });
+      });
+
+      card.querySelector('.btn-remove').addEventListener('click', () => {
+        data[day] = data[day].filter(x => x.id !== s.id);
+        render();
+        updatePreview();
+      });
+
+      body.appendChild(card);
+    });
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn-add';
+    addBtn.textContent = '+ Adicionar cirurgia';
+    addBtn.onclick = () => {
+      data[day].push({ id: uid(), hora: '', paciente: '', procedimento: '', local: '', equipe: '' });
+      render();
+      // reopen
+      const newBody = document.querySelector(`.day-body[data-day="${day}"]`);
+      if (newBody) {
+        newBody.classList.add('open');
+        const chev = newBody.previousElementSibling.querySelector('.day-chevron');
+        if (chev) chev.style.transform = 'rotate(90deg)';
+        setTimeout(() => {
+          const inputs = newBody.querySelectorAll('.surgery-card:last-of-type input');
+          if (inputs[0]) inputs[0].focus();
+        }, 50);
+      }
+      updatePreview();
+    };
+
+    body.appendChild(addBtn);
+    block.appendChild(body);
+    main.appendChild(block);
+  });
+
+  // Preview
+  const previewSection = document.createElement('div');
+  previewSection.className = 'preview-section';
+  previewSection.innerHTML = `
+    <div class="preview-header">
+      <div class="preview-title">Prévia do WhatsApp</div>
+      <div class="preview-actions">
+        <button class="btn-clear" onclick="clearAll()">↺ Limpar</button>
+        <button class="btn-copy" id="btnCopy" onclick="copyText()">⎘ Copiar texto</button>
+      </div>
+    </div>
+    <div class="preview-body" id="previewBody"></div>
+    <div class="preview-footer">
+      <span>Formatação WhatsApp aplicada (*negrito*, _itálico_)</span>
+      <span class="char-count" id="charCount">0 caracteres</span>
+    </div>`;
+  main.appendChild(previewSection);
+
+  updatePreview();
+}
+
+function getWeekLabel() {
+  const v = document.getElementById('weekStart').value;
+  if (!v) return '';
+  const [y, m, d] = v.split('-').map(Number);
+  return `${String(d).padStart(2,'0')}/${String(m).padStart(2,'0')}/${y}`;
+}
+
+function updatePreview() {
+  const body = document.getElementById('previewBody');
+  const charCount = document.getElementById('charCount');
+  if (!body) return;
+
+  const wl = getWeekLabel();
+  let lines = [];
+  let hasAny = false;
+
+  lines.push('🗓 *AGENDA CIRÚRGICA SEMANAL*');
+  if (wl) lines.push(`📅 Semana de ${wl}`);
+  lines.push('');
+
+  DAYS.forEach(day => {
+    const list = data[day].filter(s => s.hora || s.paciente || s.procedimento);
+    if (list.length === 0) return;
+    hasAny = true;
+    lines.push(`*${day.toUpperCase()}*`);
+    list.forEach((s, i) => {
+      const prefix = s.hora ? `${s.hora} – ` : '';
+      lines.push(`${i + 1}. ${prefix}${s.paciente || '—'}`);
+      if (s.procedimento) lines.push(`   📋 ${s.procedimento}`);
+      if (s.local) lines.push(`   🏥 ${s.local}`);
+      if (s.equipe) lines.push(`   👥 ${s.equipe}`);
+    });
+    lines.push('');
+  });
+
+  if (!hasAny) {
+    body.innerHTML = '<span class="preview-empty">Adicione cirurgias acima para gerar o texto...</span>';
+    if (charCount) charCount.textContent = '0 caracteres';
+    return;
+  }
+
+  lines.push('_Dúvidas: entrar em contato diretamente._');
+  const txt = lines.join('\n');
+  body.textContent = txt;
+  if (charCount) charCount.textContent = txt.length + ' caracteres';
+}
+
+function copyText() {
+  const body = document.getElementById('previewBody');
+  if (!body || body.querySelector('.preview-empty')) return;
+  const txt = body.textContent;
+  navigator.clipboard.writeText(txt).then(() => {
+    const btn = document.getElementById('btnCopy');
+    if (btn) { btn.textContent = '✓ Copiado!'; btn.classList.add('copied'); }
+    showToast();
+    setTimeout(() => {
+      if (btn) { btn.textContent = '⎘ Copiar texto'; btn.classList.remove('copied'); }
+    }, 2500);
+  });
+}
+
+function showToast() {
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function clearAll() {
+  if (!confirm('Limpar todas as cirurgias?')) return;
+  DAYS.forEach(d => data[d] = []);
+  render();
+}
+
+document.getElementById('weekStart').addEventListener('change', updatePreview);
+
+// Set default to current Monday
+const today = new Date();
+const mon = new Date(today);
+mon.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+document.getElementById('weekStart').value = mon.toISOString().split('T')[0];
+
+render();
+</script>
+</body>
+</html>
